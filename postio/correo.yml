@@ -106,3 +106,51 @@ spec:
   - name: pop3noencrypt
     port:  995
     targetPort:  995
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: correo
+  labels:
+    name: correo
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  tls:
+  - hosts:
+    - correo.blueclouds.es
+    - mail.blueclouds.es
+    - webmail.blueclouds.es
+    secretName: postio-tls
+  rules:         
+  - host: correo.blueclouds.es
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: correo
+            port:
+              number: 80
+  - host: webmail.blueclouds.es
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: correo
+            port:
+              number: 80
+  - host: mail.blueclouds.es
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: correo
+            port:
+              number: 80
