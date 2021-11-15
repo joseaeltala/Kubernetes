@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metallb-system
+  name: config
+data:
+  config: |
+    address-pools:
+    - name: default
+      addresses:
+      - 172.16.155.0/32
+      protocol: layer2
+    - name: powerdns
+      addresses:
+      - 172.16.157.0/32
+      protocol: layer2
+    - name: databases
+      addresses:
+      - 172.16.156.0/32
+      protocol: layer2
+    - name: correo
+      addresses:
+      - 172.16.160.0/32
+      protocol: layer2
+    - name: ingress
+      addresses:
+      - 172.16.170.0/32
+      protocol: layer2
+    - name: registry
+      addresses:
+      - 172.16.161.0/32
+      protocol: layer2
+    - name: games
+      addresses:
+      - 172.16.155.1/32
+      protocol: layer2
+      auto-assign: false
+    - name: gitlab
+      addresses:
+      - 172.16.155.2/32
+      protocol: layer2
+      auto-assign: false
+    - name: teamspeak
+      addresses:
+      - 172.16.172.0/32
+      protocol: layer2
+      auto-assign: false
+    - name: teamspeak-server
+      addresses:
+      - 172.16.173.0/32
+      protocol: layer2
+      auto-assign: false
+    - name: public
+      addresses:
+      - 90.74.64.190/32
+      protocol: layer2
+      auto-assign: false

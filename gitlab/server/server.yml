@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  gitlab-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: gitlab-server
+  template:  
+    metadata:
+      labels:
+        role: gitlab-server
+    spec:
+      containers:
+      - image:  gitlab/gitlab-ee
+        name:  gitlab
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512M"
+          limits:
+            cpu: "4000m"
+            memory: "8192M"
+        env:
+        - name: GITLAB_OMNIBUS_CONFIG
+          value: |
+            external_url 'https://gitlab.blueclouds.es'
+            gitlab_rails['gitlab_default_projects_features_container_registry'] = true
+            registry_external_url 'https://registry.blueclouds.es:5050'
+            registry['enable'] = true
+            registry['registry_http_addr'] = "localhost:5000"
+            registry_nginx['ssl_certificate'] = "/certs/fullchain.pem"
+            registry_nginx['ssl_certificate_key'] = "/certs/privkey.pem"
+            registry_nginx['listen_port'] = 5050
+        ports:
+        - containerPort:  80
+          name:  http
+        - containerPort:  443
+          name:  https
+        - containerPort:  5000
+          name:  registry
+        - containerPort:  5050
+          name:  registry-url
+        volumeMounts:
+        - mountPath: /etc/gitlab
+          name: config
+        - mountPath: /var/log/gitlab
+          name: logs
+        - mountPath: /var/opt/gitlab
+          name: data
+        - mountPath: /certs
+          name: certs
+      volumes:
+        - name: config
+          hostPath:
+            path: /mnt/md0/gitlab/config
+        - name: logs
+          hostPath:
+            path: /mnt/md0/gitlab/logs
+        - name: data
+          hostPath:
+            path: /mnt/md0/gitlab/data
+        - name: certs
+          hostPath:
+            path: /mnt/md0/certificados/blueclouds
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name:  gitlab-server
+  annotations:
+    metallb.universe.tf/address-pool: "gitlab"
+spec:
+  selector:
+    role:  gitlab-server
+  type:  LoadBalancer
+  ports:
+  - name: https
+    port: 443
+    targetPort: 443
+  - name: http
+    port: 80
+    targetPort: 80
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name:  gitlab-registry
+  annotations:
+    metallb.universe.tf/address-pool: "registry"
+spec:
+  selector:
+    role:  gitlab-server
+  type:  LoadBalancer
+  ports:
+  - name: registry
+    port: 5000
+    targetPort: 5000
+  - name: registry-external
+    port: 5050
+    targetPort: 5050
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitlab-ingress
+  labels:
+    name: gitlab-ingresss
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  tls:
+  - hosts:
+    - gitlab.blueclouds.es
+    - registry.blueclouds.es
+    secretName: gitlab-tls
+  rules:         
+  - host: gitlab.blueclouds.es
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gitlab-server
+            port:
+              number: 443
+  - host: registry.blueclouds.es
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gitlab-registry
+            port:
+              number: 5050

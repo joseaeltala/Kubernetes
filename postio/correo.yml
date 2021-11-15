@@ -1,0 +1,108 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name:  correo
+  labels:
+    "name": "correo"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  correo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: correo
+  template:  
+    metadata:
+      labels:
+        role: correo
+    spec:
+      containers:
+      - image: analogic/poste.io
+        name:  correo
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512M"
+          limits:
+            cpu: "1000m"
+            memory: "2048M"
+        livenessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 300
+          periodSeconds: 20
+          timeoutSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
+          periodSeconds: 20
+        env:
+        - name: DISABLE_CLAMAV
+          value: "TRUE"
+        - name: HTTPS
+          value: "OFF"
+        - name: DISABLE_CLAMAV
+          value: "TRUE"
+        - name: DISABLE_RSPAMD
+          value: "TRUE"
+        ports:
+        - containerPort:  25
+        - containerPort:  80
+        - containerPort:  443
+        - containerPort:  110
+        - containerPort:  143
+        - containerPort:  465
+        - containerPort:  587
+        - containerPort:  993
+        - containerPort:  995
+        volumeMounts:
+        - mountPath: /data
+          name: data
+      volumes:
+        - name: data
+          hostPath:
+            path: /mnt/md0/mail
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name:  correo
+  annotations:
+    metallb.universe.tf/address-pool: "correo"
+spec:
+  selector:
+    role:  correo
+  type:  LoadBalancer
+  ports:
+  - name: saliente
+    port:  25
+    targetPort:  25
+  - name: web
+    port:  80
+    targetPort:  80
+  - name: webhttps
+    port:  443
+    targetPort:  443
+  - name: pop3
+    port:  110
+    targetPort:  110
+  - name: imap
+    port:  143
+    targetPort:  143
+  - name: smtp
+    port:  465
+    targetPort:  465
+  - name: pop3ssl
+    port:  587
+    targetPort:  587
+  - name: imapssl
+    port:  993
+    targetPort:  993
+  - name: pop3noencrypt
+    port:  995
+    targetPort:  995

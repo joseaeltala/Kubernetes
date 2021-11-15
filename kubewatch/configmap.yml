@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubewatch
+data:
+  .kubewatch.yaml: |
+    handler:
+      webhook:
+        url: https://hooks.slack.com/services/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
+    resource:
+      deployment: true
+      replicationcontroller: false
+      replicaset: false
+      daemonset: false
+      services: false
+      pod: true
+      job: false
+      node: false
+      clusterrole: false
+      serviceaccount: false
+      persistentvolume: false
+      namespace: true
+      secret: false
+      configmap: false
+      ingress: false

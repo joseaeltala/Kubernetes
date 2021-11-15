@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bcsingress
+  labels:
+    name: bcsingress
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+spec:
+  rules:         
+  - tls:
+      hosts: 
+        - webmail.blueclouds.es
+        - mail.blueclouds.es
+        - correo.blueclouds.es
+      secretName: ingress-tls
+    http:
+      paths:
+      - host: webmail.blueclouds.es
+        path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: correo
+            port:
+              number: 443
+      - host: mail.blueclouds.es
+        path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: correo
+            port:
+              number: 443
+      - host: correo.blueclouds.es
+        path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: correo
+            port:
+              number: 443
+  ingressClassName: nginx
